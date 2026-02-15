@@ -20,7 +20,7 @@ class RecurrentReplayBuffer:
 
     def sample(self, batch_size):
         """
-        Tire un batch de séquences aléatoires et Retourne des Tenseurs PyTorch prêts pour l'entraînement.
+        Tire un batch de séquences aléatoires et Retourne des Tenseurs prêts pour l'entraînement.
         """
         b_obs, b_actions, b_rewards, b_next_obs, b_dones = [], [], [], [], []
         indices = np.random.choice(len(self.buffer), batch_size, replace=True)
@@ -36,7 +36,7 @@ class RecurrentReplayBuffer:
                 # pour avoir une séquence de taille 'seq_len'
                 start_index = np.random.randint(0, len(episode) - self.seq_len + 1)
             trace = episode[start_index : start_index + self.seq_len]
-            obs, action, reward, next_obs, done = zip(*trace) # zip(*) transforme [(o,a,r), (o,a,r)] en ([o,o], [a,a], [r,r])
+            obs, action, reward, next_obs, done = zip(*trace) 
 
             b_obs.append(np.array(obs))
             b_actions.append(np.array(action))

@@ -1,36 +1,37 @@
 import numpy as np
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import sys
-import math
 
 try:
     import NOMA_Gauss_Markov_DRQN as EnvModule 
     from Qnetwork import QNetwork
     from Replay_Buffer import RecurrentReplayBuffer
 except ImportError as e:
-    print(f"erreur: {e}")
+    print(f"Import Error: {e}")
     sys.exit()
 
 EPISODES = 5000          
 MAX_STEPS = 50           
-BATCH_SIZE = 10
+BATCH_SIZE = 32          
 SEQ_LEN = 10             
 GAMMA = 0.99             
 EPSILON_START = 1.0      
-EPSILON_END = 0.01       
-EPSILON_DECAY = 1000     
-LEARNING_RATE = 1e-3
+EPSILON_END = 0.1        
+EPSILON_DECAY = 4000     
+LEARNING_RATE = 1e-4     
 HIDDEN_DIM = 64          
-CAPACITY = 2000          
+CAPACITY = 10000         
+TARGET_UPDATE_FREQ = 10  
+UPDATES_PER_EPISODE = 5  
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Entraînement lancé sur : {device}")
+print(f"Device: {device}")
 
 env = EnvModule.GaussMarkov(bruit=0.1) 
-
-input_dim = 2   # [Action, Reward]
+input_dim = 2   
 output_dim = env.K_actions if hasattr(env, 'K_actions') else 10 
 
 policy_net = QNetwork(input_dim, HIDDEN_DIM, output_dim).to(device)
@@ -43,6 +44,34 @@ replay_buffer = RecurrentReplayBuffer(CAPACITY, SEQ_LEN)
 
 history_efficiency = []
 
+def train_step():
+    if len(replay_buffer) < BATCH_SIZE:
+        return None
+    
+    batch = replay_buffer.sample(BATCH_SIZE)
+    
+    states = batch['obs'].to(device)
+    actions = batch['actions'].to(device)
+    rewards = batch['rewards'].to(device)
+    next_states = batch['next_obs'].to(device)
+    dones = batch['dones'].to(device)
+    
+    q_values, _ = policy_net(states) 
+    current_q = q_values.gather(2, actions)
+    
+    with torch.no_grad():
+        next_q_values, _ = target_net(next_states)
+        max_next_q = next_q_values.max(dim=2, keepdim=True)[0]
+        target_q = rewards + (1 - dones) * GAMMA * max_next_q
+    
+    loss = F.smooth_l1_loss(current_q, target_q)
+    
+    optimizer.zero_grad()
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(policy_net.parameters(), 1.0)
+    optimizer.step()
+    
+    return loss.item()
 
 epsilon = EPSILON_START
 
@@ -51,18 +80,19 @@ for episode in range(EPISODES):
     hidden_state = None 
     episode_agent_reward = 0
     episode_oracle_reward = 0
+    episode_data = [] 
     
     for step in range(MAX_STEPS):
         try:
             reward_oracle = env.get_oracle_reward()
         except AttributeError:
-            # Fallback si tu n'as pas mis à jour la classe NOMA
             reward_oracle = 1.0 
-            
-        if reward_oracle == 0: reward_oracle = 1e-9
+        
+        if reward_oracle == 0: 
+            reward_oracle = 1e-9
 
         obs_tensor = torch.tensor([obs], dtype=torch.float32).unsqueeze(0).to(device)
-       
+        
         if np.random.rand() < epsilon:
             action = np.random.randint(output_dim)
             with torch.no_grad():
@@ -73,40 +103,59 @@ for episode in range(EPISODES):
                 action = q_values.argmax().item()
    
         next_obs, reward_agent, done = env.step(action)
-       
+        
+        episode_data.append((obs, action, reward_agent, next_obs, float(done)))
+        
         episode_agent_reward += reward_agent
         episode_oracle_reward += reward_oracle
         
         obs = next_obs
-     
-    epsilon = max(EPSILON_END, EPSILON_START - episode / EPSILON_DECAY)
-    #epsilon = EPSILON_END + (EPSILON_START - EPSILON_END) * math.exp(-1. * episode / EPSILON_DECAY)
     
-    if episode_oracle_reward == 0: episode_oracle_reward = 1e-9
+    replay_buffer.push(episode_data)
+    
+    for _ in range(UPDATES_PER_EPISODE):
+        train_step()
+    
+    if episode % TARGET_UPDATE_FREQ == 0:
+        target_net.load_state_dict(policy_net.state_dict())
+     
+    progress = min(1.0, episode / EPSILON_DECAY)
+    epsilon = max(EPSILON_END, EPSILON_START - (progress * (EPSILON_START - EPSILON_END)))
+    
+    if episode_oracle_reward == 0: 
+        episode_oracle_reward = 1e-9
+    
     efficiency = episode_agent_reward / episode_oracle_reward
     history_efficiency.append(efficiency)
     
     if episode % 100 == 0:
-        print(f"Episode {episode}/{EPISODES} | Efficacité: {efficiency:.2f} | Epsilon: {epsilon:.2f}")
+        print(f"Ep {episode}/{EPISODES} | Eff: {efficiency:.2f} | Eps: {epsilon:.2f} | Buffer: {len(replay_buffer)}")
 
-def plot_results(efficiencies, window=50):
-    plt.figure(figsize=(10, 6))
+torch.save({
+    'policy_net': policy_net.state_dict(),
+    'target_net': target_net.state_dict(),
+    'optimizer': optimizer.state_dict(),
+}, 'drqn_optimized_model.pth')
+print("Model Saved.")
+
+def plot_results(efficiencies, window=100):
+    fig, ax = plt.subplots(figsize=(10, 6))
     
     if len(efficiencies) >= window:
-        smoothed = np.convolve(efficiencies, np.ones(window)/window, mode='valid')
+        eff_smooth = np.convolve(efficiencies, np.ones(window)/window, mode='valid')
     else:
-        smoothed = efficiencies
-
-    plt.axhline(y=1.0, color='green', linestyle='--', linewidth=2, label='Oracle')
-    plt.plot(smoothed, color='purple', linewidth=1.5, label='Efficacité (Agent/Oracle)')
+        eff_smooth = efficiencies
+        
+    ax.plot(eff_smooth, label='Agent DRQN', color='purple', linewidth=1.5)
+    ax.axhline(y=1.0, color='green', linestyle='--', linewidth=2, label='Oracle')
+    ax.set_title(f"Efficiency (Moving Avg {window})", fontsize=14)
+    ax.set_xlabel("Episodes", fontsize=12)
+    ax.set_ylabel("Ratio (Agent/Oracle)", fontsize=12)
+    ax.set_ylim(0, 1.2)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
     
-    plt.title("Performance Normalisée par l'Oracle (Gauss-Markov)")
-    plt.xlabel("Episodes")
-    plt.ylabel("Efficacité Normalisée")
-    plt.ylim(0, 1.2)
-    plt.legend(loc='upper right')
-    plt.grid(True, linestyle='--', alpha=0.5)
-    
+    plt.tight_layout()
     plt.show()
 
-plot_results(history_efficiency, window=100)
+plot_results(history_efficiency)
