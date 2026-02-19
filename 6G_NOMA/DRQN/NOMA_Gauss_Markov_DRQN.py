@@ -20,7 +20,7 @@ class GaussMarkov:
         self.h1_curr = None
         self.h2_curr = None
         
-        self.K_actions = 20 
+        self.K_actions = 10 
 
     def _init_complex_channel(self, avg_gain):
         std = np.sqrt(avg_gain / 2.0)

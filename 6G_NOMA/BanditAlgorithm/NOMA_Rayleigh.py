@@ -5,74 +5,44 @@ import numpy as np
 class NOMA_Simulator:
     
     def __init__(self):
-        self.P_max = 1.0
+        self.P_max = 5.0 #10
         self.bruit = 0.1
-        self.gain_moyen_U1 = 0.2
-        self.gain_moyen_U2 = 0.8
+        self.gain_moyen_U1 = 0.05 #0.2
+        self.gain_moyen_U2 = 1.5 #0.8 
         self.P_circuit = 5.0
-        self.R_target_1 = 1.5 #(utilisateur lointain)
-        self.R_target_2 = 2.5 #(utilisateur proche)
+        self.R_target_1 = 1.0 #(utilisateur lointain)
+        self.R_target_2 = 2.0 #(utilisateur proche)
         self.Gamma_1 = (2**self.R_target_1) - 1
         self.Gamma_2 = (2**self.R_target_2) - 1
         self.g1 = 0.0
         self.g2 = 0.0
-        
+
     def generate_channels_gains(self):
         self.g1 = np.random.exponential(scale=self.gain_moyen_U1)
         self.g2 = np.random.exponential(scale=self.gain_moyen_U2)
         return self.g1, self.g2
     
-    def step(self, alpha): 
+    def _evaluate(self, alpha, g1, g2):
+        P1, P2 = alpha * self.P_max, (1 - alpha) * self.P_max
+        SINR_1     = (P1 * g1) / (P2 * g1 + self.bruit)
+        SINR_2_sic = (P1 * g2) / (P2 * g2 + self.bruit)
+        SINR_2_own = (P2 * g2) / self.bruit
+
+        success_U1 = (SINR_1>= self.Gamma_1)
+        success_U2 = (SINR_2_sic >= self.Gamma_1) and (SINR_2_own >= self.Gamma_2)
+    
+    # Même reward pour tout le monde
+        return 1.0 if (success_U1 and success_U2) else 0.0
+
+    def step(self, alpha): #action de l'agent
         self.generate_channels_gains()
-        g1 = self.g1
-        g2 = self.g2
-        
-        Signal_U1 = alpha * self.P_max * g1
-        Interference_U1 = (1 - alpha) * self.P_max * g1
-        SINR_1 = Signal_U1 / (Interference_U1 + self.bruit)
-            
-        Signal_U2_decoding_U1 = alpha * self.P_max * g2 
-        Interference_U2_seeing_U2 = (1 - alpha) * self.P_max * g2
-        SINR_2_step1 = Signal_U2_decoding_U1 / (Interference_U2_seeing_U2 + self.bruit)
-            
-        signal_U2_clean = (1 - alpha) * self.P_max * g2
-        SINR_2_step2 = signal_U2_clean / self.bruit
-            
-        success_U1 = (SINR_1 >= self.Gamma_1)
-        SIC_Condition = (SINR_2_step1 >= self.Gamma_1)
-        Decoding_Condition = (SINR_2_step2 >= self.Gamma_2)
-        success_U2 = SIC_Condition and Decoding_Condition
-        
-        if success_U1 and success_U2:
-            Reward = 1.0
-        else:
-            Reward = 0.0
-            
-        Feedbacks = [1 if success_U1 and success_U2 else 0]
-        return Reward, Feedbacks
+        reward = self._evaluate(alpha, self.g1, self.g2)
+        feedback = [1 if reward == 1.0 else 0]
+        return reward, feedback
 
-    def check_possibility(self, alpha, g1, g2):
-        Signal_U1 = alpha * self.P_max * g1
-        Interference_U1 = (1 - alpha) * self.P_max * g1
-        SINR_1 = Signal_U1 / (Interference_U1 + self.bruit)
-        
-        Signal_U2_decoding_U1 = alpha * self.P_max * g2 
-        Interference_U2_seeing_U2 = (1 - alpha) * self.P_max * g2
-        SINR_2_step1 = Signal_U2_decoding_U1 / (Interference_U2_seeing_U2 + self.bruit)
-        
-        signal_U2_clean = (1 - alpha) * self.P_max * g2
-        SINR_2_step2 = signal_U2_clean / self.bruit
-        
-        success_U1 = (SINR_1 >= self.Gamma_1)
-        SIC_Condition = (SINR_2_step1 >= self.Gamma_1)
-        Decoding_Condition = (SINR_2_step2 >= self.Gamma_2)
-        success_U2 = SIC_Condition and Decoding_Condition
-        
-        if success_U1 and success_U2:
-            return 1.0
-        else:
-            return 0.0
-
+    def check_possibility(self, alpha, g1, g2): #oracle
+        return self._evaluate(alpha, g1, g2)  # exactement la même logique
+    
 class NOMA_Adapter:
     def __init__(self):
         self.env = NOMA_Simulator()
