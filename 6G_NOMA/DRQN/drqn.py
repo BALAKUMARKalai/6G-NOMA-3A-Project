@@ -126,7 +126,7 @@ for episode in range(EPISODES):
     epsilon  = max(EPSILON_END, EPSILON_START - progress * (EPSILON_START - EPSILON_END))
 
     # Métriques
-    outage_prob = outage_count        / MAX_STEPS
+    outage_prob = outage_count/ MAX_STEPS
     oracle_outage = oracle_outage_count / MAX_STEPS
     efficiency = episode_agent_reward / max(episode_oracle_reward, 1e-9)
 

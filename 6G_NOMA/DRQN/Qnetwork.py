@@ -12,14 +12,10 @@ class QNetwork(nn.Module):
         super(QNetwork, self).__init__()
         
         self.fc1 = nn.Linear(input_size, hidden_size)
-        
-        # LSTM avec batch_first=True
         self.lstm = nn.LSTM(
             input_size=hidden_size, 
             hidden_size=hidden_size, 
-            batch_first=True
-        )
-        
+            batch_first=True)
         self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x, hidden_state=None):
@@ -28,12 +24,7 @@ class QNetwork(nn.Module):
         :param hidden_state: Tuple (h_0, c_0)
         :return: q_values (Batch, Seq_Len, Output_Size), hidden_state
         """
-    
         x = F.relu(self.fc1(x))
-        
         lstm_out, new_hidden_state = self.lstm(x, hidden_state)
-        
-        
         q_values = self.fc2(lstm_out)
-        
         return q_values, new_hidden_state
