@@ -28,20 +28,12 @@ class QNetwork(nn.Module):
         :param hidden_state: Tuple (h_0, c_0)
         :return: q_values (Batch, Seq_Len, Output_Size), hidden_state
         """
-        
-        # 1. Feature Extraction (Appliqué sur chaque pas de temps)
-        # x : (Batch, Seq, Hidden)
+    
         x = F.relu(self.fc1(x))
         
-        # 2. LSTM
-        # lstm_out : (Batch, Seq, Hidden) -> Contient TOUTE la séquence
         lstm_out, new_hidden_state = self.lstm(x, hidden_state)
         
-        # 3. Calcul des Q-Values
-        # --- CORRECTION CRUCIALE ICI ---
-        # On ne prend plus juste le dernier élément [-1].
-        # On passe toute la séquence 'lstm_out' dans la couche linéaire.
-        # PyTorch va transformer (Batch, Seq, Hidden) -> (Batch, Seq, Output)
+        
         q_values = self.fc2(lstm_out)
         
         return q_values, new_hidden_state

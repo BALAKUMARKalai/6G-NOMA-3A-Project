@@ -101,15 +101,12 @@ for episode in range(EPISODES):
                 q_values, hidden_state = policy_net(obs_tensor, hidden_state)
                 action = q_values.argmax().item()
 
-        # ── CORRECTION : step() d'abord, oracle() ensuite (mêmes canaux) ──
         next_obs, reward_agent, done = env.step(action)
-        reward_oracle = env.get_oracle_reward()   # mêmes canaux que step()
+        reward_oracle = env.get_oracle_reward()   
 
-        # Outage agent : reward=0 → outage
         if reward_agent == 0:
             outage_count += 1
 
-        # Outage oracle : meilleur alpha possible aussi en outage ?
         if reward_oracle == 0:
             oracle_outage_count += 1
 
@@ -117,8 +114,7 @@ for episode in range(EPISODES):
         episode_oracle_reward += reward_oracle
         episode_data.append((obs, action, reward_agent, next_obs, float(done)))
         obs = next_obs
-
-    # ── Stockage et entraînement ───────────────────────────────────────
+        
     replay_buffer.push(episode_data)
     for _ in range(UPDATES_PER_EPISODE):
         train_step()
@@ -126,14 +122,13 @@ for episode in range(EPISODES):
     if episode % TARGET_UPDATE_FREQ == 0:
         target_net.load_state_dict(policy_net.state_dict())
 
-    # Décroissance epsilon
     progress = min(1.0, episode / EPSILON_DECAY)
     epsilon  = max(EPSILON_END, EPSILON_START - progress * (EPSILON_START - EPSILON_END))
 
     # Métriques
-    outage_prob   = outage_count        / MAX_STEPS
+    outage_prob = outage_count        / MAX_STEPS
     oracle_outage = oracle_outage_count / MAX_STEPS
-    efficiency    = episode_agent_reward / max(episode_oracle_reward, 1e-9)
+    efficiency = episode_agent_reward / max(episode_oracle_reward, 1e-9)
 
     history_outage_prob.append(outage_prob)
     history_oracle_outage.append(oracle_outage)
@@ -146,7 +141,7 @@ for episode in range(EPISODES):
               f"Eff: {efficiency:.2f} | "
               f"Eps: {epsilon:.2f}")
 
-# ── Sauvegarde ─────────────────────────────────────────────────────────
+
 torch.save({
     'policy_net': policy_net.state_dict(),
     'target_net': target_net.state_dict(),
@@ -157,7 +152,6 @@ print(f"\nP_out finale (agent)  : {np.mean(history_outage_prob[-100:]):.3f}")
 print(f"P_out finale (oracle) : {np.mean(history_oracle_outage[-100:]):.3f}")
 print(f"Efficacité finale     : {np.mean(history_efficiency[-100:]):.3f}")
 
-# ── Plots ──────────────────────────────────────────────────────────────
 def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
@@ -173,7 +167,7 @@ def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
     ax1.set_ylim(0, 1.05)
     ax1.legend()
     ax1.grid(True, linestyle='--', alpha=0.4)
-
+    """
     # Plot 2 : Efficacité agent / oracle
     ax2.plot(smooth(efficiencies), color='purple', linewidth=1.5, label="Efficacité (Agent/Oracle)")
     ax2.axhline(y=1.0, color='green', linestyle='--', linewidth=1.5, label="Oracle (référence)")
@@ -183,7 +177,7 @@ def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
     ax2.set_ylim(0, 1.2)
     ax2.legend()
     ax2.grid(True, linestyle='--', alpha=0.4)
-
+"""
     plt.tight_layout()
     plt.show()
 
