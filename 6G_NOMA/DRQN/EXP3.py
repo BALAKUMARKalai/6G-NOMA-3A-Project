@@ -22,7 +22,7 @@ class EXP3:
         self.weights /= np.sum(self.weights)
 
 
-# ── Fonction indépendante (hors classe) ───────────────────────────────
+
 def run_exp3_episodes(env, n_episodes, max_steps, gamma=0.2):
     K     = env.K_actions
     agent = EXP3(K=K, gamma=gamma)
@@ -51,8 +51,6 @@ def run_exp3_episodes(env, n_episodes, max_steps, gamma=0.2):
 
     return np.array(history_outage), np.array(history_oracle)
 
-
-# ── Simulation ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
 
     env        = EnvModule.GaussMarkov(bruit=0.1)
