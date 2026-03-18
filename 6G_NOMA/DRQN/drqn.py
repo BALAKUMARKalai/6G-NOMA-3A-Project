@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 import numpy as np
 import torch
 import torch.optim as optim
@@ -10,11 +10,12 @@ try:
     import NOMA_Gauss_Markov_DRQN as EnvModule
     from Qnetwork import QNetwork
     from Replay_Buffer import RecurrentReplayBuffer
+    import EXP3
 except ImportError as e:
     print(f"Import Error: {e}")
     sys.exit()
 
-EPISODES = 5000
+EPISODES = 8000
 MAX_STEPS = 50
 BATCH_SIZE = 64
 SEQ_LEN = 10
@@ -22,10 +23,10 @@ GAMMA = 0.99
 EPSILON_START = 1.0
 EPSILON_END = 0.01
 EPSILON_DECAY = 3000
-LEARNING_RATE = 5e-4
+LEARNING_RATE = 5e-5
 HIDDEN_DIM = 128
 CAPACITY = 10000
-TARGET_UPDATE_FREQ  = 10
+TARGET_UPDATE_FREQ  = 50
 UPDATES_PER_EPISODE = 5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -34,7 +35,7 @@ print(f"Device: {device}")
 #Environnement
 env = EnvModule.GaussMarkov(bruit=0.1)
 input_dim = 2                  # [alpha_t, feedback_1bit_t]
-output_dim = env.K_actions      # 20 actions discrètes
+output_dim = env.K_actions      # 40 actions discrètes
 
 #Réseaux
 policy_net = QNetwork(input_dim, HIDDEN_DIM, output_dim).to(device)
@@ -151,7 +152,8 @@ torch.save({
 print(f"\nP_out finale (agent)  : {np.mean(history_outage_prob[-100:]):.3f}")
 print(f"P_out finale (oracle) : {np.mean(history_oracle_outage[-100:]):.3f}")
 print(f"Efficacité finale     : {np.mean(history_efficiency[-100:]):.3f}")
-
+np.save('outage_drqn.npy',   np.array(history_outage_prob))
+np.save('outage_oracle_drqn.npy', np.array(history_oracle_outage))
 def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 

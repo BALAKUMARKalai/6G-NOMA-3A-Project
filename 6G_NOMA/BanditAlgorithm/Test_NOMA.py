@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
+
 import Partitioner
-import TestFunctions
 import HOO
 import numpy as np
 import matplotlib
@@ -27,7 +26,7 @@ def simple_test():
     bests = np.array(noma_wrapper.bests)
     agent_failures = 1.0 - rewards
     oracle_failures = 1.0 - bests  
-    window = 500  #afficher la moyenne des 1000 derniers rounds
+    window = 1000  #afficher la moyenne des 1000 derniers rounds
     outage_agent = np.convolve(agent_failures, np.ones(window)/window, mode='valid')
     outage_oracle = np.convolve(oracle_failures, np.ones(window)/window, mode='valid')
     plt.figure(figsize=(10, 5))
@@ -39,7 +38,7 @@ def simple_test():
     plt.ylim(0, 1.05) 
     plt.xlabel("Rounds (Temps)")
     plt.ylabel("Probabilité de Coupure (P_out)")
-    plt.title("Évolution de la Probabilité d'Outage (Moyenne glissante sur 500 rounds, P_max = 5W)")
+    plt.title("Évolution de la Probabilité d'Outage (Moyenne glissante sur 500 rounds, P_max = 7W)")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()

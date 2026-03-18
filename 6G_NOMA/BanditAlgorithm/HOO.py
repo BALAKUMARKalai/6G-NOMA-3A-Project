@@ -1,14 +1,6 @@
-# -*- coding: utf-8 -*-
-
 import TreeNode
 import random
 import math
-
-"""
-    This class is built around the ideas that are thoroughly explained in the paper
-    "X-armed Bandits" by Bubeck et al., 2011.
-"""
-
 
 class HOO(object):
     """

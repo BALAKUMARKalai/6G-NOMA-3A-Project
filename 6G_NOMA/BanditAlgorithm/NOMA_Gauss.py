@@ -3,7 +3,7 @@ import numpy as np
 class NOMA_Simulator:
     
     def __init__(self):
-        self.P_max = 100.0
+        self.P_max = 7.0
         self.bruit = 0.1
         self.gain_moyen_U1 = 0.05
         self.gain_moyen_U2 = 1.0

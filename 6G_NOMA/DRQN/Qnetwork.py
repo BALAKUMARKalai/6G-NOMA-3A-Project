@@ -15,6 +15,7 @@ class QNetwork(nn.Module):
         self.lstm = nn.LSTM(
             input_size=hidden_size, 
             hidden_size=hidden_size, 
+            num_layers= 2,
             batch_first=True)
         self.fc2 = nn.Linear(hidden_size, output_size)
 
