@@ -72,10 +72,10 @@ if __name__ == "__main__":
     plt.figure(figsize=(10, 5))
     plt.plot(smooth(outage_agent),  color='blue',  linewidth=1.5, label="P_out Agent (EXP3)")
     plt.plot(smooth(outage_oracle), color='black', linewidth=1.5, linestyle='--',
-             label="Limite Physique (Oracle)")
-    plt.xlabel("Épisodes")
+             label="Physical Limit(Oracle)")
+    plt.xlabel("Episodes")
     plt.ylabel("P(Outage)")
-    plt.title(f"EXP3 sur NOMA (moyenne glissante {window} épisodes)")
+    plt.title(f"Evolution of Outage Probability (moyenne glissante {window} épisodes)")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.4)
     plt.tight_layout()

@@ -9,10 +9,10 @@ def plot_comparison(outage_exp3, outage_drqn, outage_rdpg, outage_oracle, window
     plt.plot(smooth(outage_drqn),   color='red',    linewidth=1.5, label="DRQN")
     plt.plot(smooth(outage_rdpg),   color='purple', linewidth=1.5, label="RDPG")
     plt.plot(smooth(outage_oracle), color='black',  linewidth=1.5, 
-             linestyle='--', label="Limite Physique (Oracle)")
-    plt.xlabel("Épisodes")
+             linestyle='--', label="Physical Limit (Oracle)")
+    plt.xlabel("Episodes")
     plt.ylabel("P(Outage)")
-    plt.title("Comparaison EXP3 vs DRQN vs RDPG")
+    plt.title("Comparison EXP3 vs DRQN vs RDPG (rhô = 0.95)")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.4)
     plt.tight_layout()

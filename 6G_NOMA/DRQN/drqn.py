@@ -22,7 +22,7 @@ SEQ_LEN = 10
 GAMMA = 0.99
 EPSILON_START = 1.0
 EPSILON_END = 0.01
-EPSILON_DECAY = 3000
+EPSILON_DECAY = 5000
 LEARNING_RATE = 5e-5
 HIDDEN_DIM = 128
 CAPACITY = 10000
@@ -163,8 +163,8 @@ def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
     # Plot 1 : Probabilité d'outage
     ax1.plot(smooth(outage_agent),  color='red',   linewidth=1.5, label="P_out Agent (DRQN)")
     ax1.plot(smooth(outage_oracle), color='black', linewidth=1.5, linestyle='--',
-             label="Limite Physique (Oracle)")
-    ax1.set_title(f"Probabilité d'Outage (moyenne glissante {window} épisodes)")
+             label="Physical Limit (Oracle)")
+    ax1.set_title(f"Outage Probability (rolling average {window} episodes)")
     ax1.set_ylabel("P(Outage)")
     ax1.set_ylim(0, 1.05)
     ax1.legend()

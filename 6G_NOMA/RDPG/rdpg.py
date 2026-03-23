@@ -16,13 +16,12 @@ except ImportError as e:
     print(f"Import Error: {e}")
     sys.exit()
 
-# ── Hyperparamètres ────────────────────────────────────────────────────
 EPISODES             = 8000
 MAX_STEPS            = 50
 BATCH_SIZE           = 64
 SEQ_LEN              = 10
 GAMMA                = 0.99
-TAU                  = 0.005      # soft update des réseaux cibles
+TAU                  = 0.005      
 LEARNING_RATE_ACTOR  = 5e-5
 LEARNING_RATE_CRITIC = 5e-5
 HIDDEN_DIM           = 128
@@ -198,15 +197,15 @@ def plot_results(outage_agent, outage_oracle, efficiencies, window=100):
 
     ax1.plot(smooth(outage_agent),  color='red',   linewidth=1.5, label="P_out Agent (RDPG)")
     ax1.plot(smooth(outage_oracle), color='black', linewidth=1.5, linestyle='--',
-             label="Limite Physique (Oracle)")
-    ax1.set_title(f"Probabilité d'Outage (moyenne glissante {window} épisodes)")
+             label="Physical Limit (Oracle)")
+    ax1.set_title(f"Outage Probability(rolling mean {window} episodes)")
     ax1.set_ylabel("P(Outage)")
     ax1.set_ylim(0, 1.05)
     ax1.legend()
     ax1.grid(True, linestyle='--', alpha=0.4)
 
     ax2.plot(smooth(efficiencies), color='purple', linewidth=1.5, label="Efficacité (Agent/Oracle)")
-    ax2.axhline(y=1.0, color='green', linestyle='--', linewidth=1.5, label="Oracle (référence)")
+    ax2.axhline(y=1.0, color='green', linestyle='--', linewidth=1.5, label="Oracle ")
     ax2.set_title(f"Efficacité relative Agent/Oracle (moyenne glissante {window} épisodes)")
     ax2.set_xlabel("Épisodes")
     ax2.set_ylabel("Ratio")

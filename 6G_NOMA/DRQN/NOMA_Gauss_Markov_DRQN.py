@@ -14,7 +14,7 @@ class GaussMarkov:
         self.R_target_2 = 2.0
         self.Gamma_1 = (2 ** self.R_target_1) - 1
         self.Gamma_2 = (2 ** self.R_target_2) - 1
-        self.rho = 0.50
+        self.rho = 0.95
         self.h1_curr = None
         self.h2_curr = None
 

@@ -12,7 +12,7 @@ import NOMA_Gauss
 def simple_test():
 
     noma_wrapper = NOMA_Rayleigh.NOMA_Adapter()
-    bounds = [[0.0], [1]] 
+    bounds =[[0.0, 0.0], [1.0, 1.0]] 
     partitioner = Partitioner.Partitioner(min_values=bounds[0], max_values=bounds[1])
     x_armed_bandit = HOO.HOO(v1=0.4, ro=0.35, covering_generator_function=partitioner.halve_one_by_one)
      # v1 : Paramètre de régularité.
@@ -26,19 +26,19 @@ def simple_test():
     bests = np.array(noma_wrapper.bests)
     agent_failures = 1.0 - rewards
     oracle_failures = 1.0 - bests  
-    window = 1000  #afficher la moyenne des 1000 derniers rounds
+    window = 500  #afficher la moyenne des 1000 derniers rounds
     outage_agent = np.convolve(agent_failures, np.ones(window)/window, mode='valid')
     outage_oracle = np.convolve(oracle_failures, np.ones(window)/window, mode='valid')
     plt.figure(figsize=(10, 5))
     # Courbe Agent
-    plt.plot(outage_agent, label="Probabilité d'Outage (Agent HOO)", color='red', linewidth=1.5)
+    plt.plot(outage_agent, label="Outage Probability(Agent HOO)", color='red', linewidth=1.5)
     
-    plt.plot(outage_oracle, label="Limite Physique (Oracle Outage)", color='black', linestyle='--', alpha=0.6)
+    plt.plot(outage_oracle, label="Physical Limit (Oracle Outage)", color='black', linestyle='--', alpha=0.6)
     
     plt.ylim(0, 1.05) 
-    plt.xlabel("Rounds (Temps)")
-    plt.ylabel("Probabilité de Coupure (P_out)")
-    plt.title("Évolution de la Probabilité d'Outage (Moyenne glissante sur 500 rounds, P_max = 7W)")
+    plt.xlabel("Rounds")
+    plt.ylabel("Outage Probability(P_out)")
+    plt.title("Evolution of Outage Probability (Rolling Average 500 rounds, P_max = 7W)")
     plt.legend()
     plt.grid(True, linestyle='--', alpha=0.5)
     plt.show()
